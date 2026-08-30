@@ -1,0 +1,20 @@
+packages:
+  - '../packages/contracts'
+  - '../packages/common'
+  - '../catalog-service'
+  - '../gateway-service'
+allowBuilds:
+  '@nestjs/core': true
+  '@parcel/watcher': true
+  '@prisma/client': true
+  '@prisma/engines': true
+  '@scarf/scarf': true
+  '@swc/core': true
+  prisma: true
+  protobufjs: true
+  unrs-resolver: true
+
+minimumReleaseAgeExclude:
+  - '@juice11-micro/contracts@1.0.0'
+linkWorkspacePackages: true
+ignoreWorkspaceCycles: true
