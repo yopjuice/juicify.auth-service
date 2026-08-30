@@ -18,3 +18,4 @@ minimumReleaseAgeExclude:
   - '@juice11-micro/contracts@1.0.0'
 linkWorkspacePackages: true
 ignoreWorkspaceCycles: true
+ignoreWorkspaceRootCheck: true
