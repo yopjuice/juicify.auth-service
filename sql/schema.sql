@@ -2,6 +2,7 @@ CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN');
 
 CREATE TABLE "users" (
     "id" TEXT DEFAULT gen_random_uuid()::TEXT NOT NULL,
+    "name" TEXT NOT NULL,
     "phone" TEXT,
     "email" TEXT NOT NULL,
     "password_hash" TEXT,
@@ -21,7 +22,6 @@ CREATE TABLE "artist_users" (
     "id" TEXT DEFAULT gen_random_uuid()::TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "artist_id" TEXT NOT NULL,
-    "role" "ArtistMemberRole" NOT NULL DEFAULT 'OWNER',
     "created_at" TIMESTAMP (3) NOT NULL DEFAULT current_timestamp,
     "updated_at" TIMESTAMP (3) NOT NULL DEFAULT current_timestamp,
 
@@ -43,6 +43,18 @@ CREATE TABLE "pending_contact_changes" (
     CONSTRAINT "pending_contact_changes_pkey" PRIMARY KEY ("id"),
     CONSTRAINT "pending_contact_changes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
+
+
+CREATE TABLE "tokens" (
+    "id" TEXT DEFAULT gen_random_uuid()::TEXT NOT NULL,
+    "token_hash" TEXT NOT NULL,
+    "created_at" TIMESTAMP (3) NOT NULL DEFAULT current_timestamp,
+    "updated_at" TIMESTAMP (3) NOT NULL DEFAULT current_timestamp,
+
+    CONSTRAINT "tokens_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "tokens_id_key" UNIQUE ("token_hash", "id")
+);
+
 
 CREATE INDEX "artist_users_user_id_idx" ON "artist_users" ("user_id");
 
