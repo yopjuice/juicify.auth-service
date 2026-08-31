@@ -46,6 +46,8 @@
     "@nestjs/platform-express": "^11.2.3",
     "@nestjs/swagger": "^11.2.6",
     "@pgtyped/runtime": "^2.4.2",
+    "@types/bcrypt": "^6.0.0",
+    "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "pg": "^8.23.0",
