@@ -1,0 +1,65 @@
+name: Deploy to Local Machine
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: local-ubuntu # local runner
+    env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }} 
+        DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+        DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+        DATABASE_USER: ${{ secrets.DATABASE_USER }}
+        DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+        DATABASE_DB: ${{ secrets.DATABASE_DB }}
+        GRPC_HOST: ${{ secrets.GRPC_HOST }}
+        GRPC_PORT: ${{ secrets.GRPC_PORT }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      # Make sure pnpm is installed
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 11
+
+      - name: Copy source files to deploy folder
+        run: |
+          mkdir -p ~/juicify-deploy/auth
+          rsync -vrax --delete --exclude='node_modules' ./ ~/juicify-deploy/auth/
+          cd ~/juicify-deploy/auth
+
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          pnpm store prune
+          cd ~/juicify-deploy/auth
+          pnpm install --frozen-lockfile
+          pnpm update @juice11-micro/contracts
+
+      # Generate /generated folder with SQL queries
+      - name: Generate SQL Types
+        run: |
+          cd ~/juicify-deploy/auth
+          pnpm run db:types
+
+      # Compile code
+      - name: Build application
+        run: |
+          cd ~/juicify-deploy/auth
+          pnpm build
+
+      # Start application with pm2
+      - name: Start/Restart Application
+        run: |
+         cd ~/juicify-deploy/auth
+         pm2 restart "juicify-auth" --update-env || pm2 start dist/src/main.js --name "juicify-auth"
