@@ -7,7 +7,8 @@ import { LoginDto } from './dto/login.dto'
 import { AuthTokensResponse, GetMyInfoResponse } from '@juice11-micro/contracts';
 import {CurrentUser} from './decorators/user.decorator'
 import type { JwtPayload } from './interfaces/jwt-payload.interface';
-// import { RegisterDto, LoginDto, AuthTokens, UserProfile, Empty } from './interfaces/auth.interface';
+import { RefreshDto } from './dto/refresh.dto';
+import { LogoutDto } from './dto/logout.dto';
 
 
 @Controller()
@@ -21,11 +22,17 @@ export class AuthController {
 
   @GrpcMethod('AuthService', 'Login')
   async login(data: LoginDto): Promise<AuthTokensResponse> {
-    const user = await this.authService.validateUser(data.email, data.password);
-    if (!user) {
-      throw new Error('Unauthorized: Invalid credentials');
-    }
-    return this.authService.login(user);
+    return this.authService.login(data);
+  }
+
+  @GrpcMethod('AuthService', 'RefreshTokens')
+  async refreshTokens(data: RefreshDto): Promise<AuthTokensResponse> {
+    return this.authService.refreshTokens(data.refreshToken);
+  }
+
+  @GrpcMethod('AuthService', 'Logout')
+  async logout(data: LogoutDto): Promise<void> {
+    return this.authService.logout(data.refreshToken);
   }
 
   @UseGuards(GrpcJwtGuard)

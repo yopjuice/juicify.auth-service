@@ -1,22 +1,24 @@
-import { Injectable, ConflictException,  ForbiddenException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { RpcException } from '@nestjs/microservices';
 import { UserService } from '../user/user.service';
+import { TokenService } from '../token/token.service';
+import { JwtPayload } from './interfaces/jwt-payload.interface';
 import * as bcrypt from 'bcrypt';
+import { Injectable } from '@nestjs/common';
+import { AuthTokens } from '../token/interfaces/token.interface';
 import { RegisterDto } from './dto/register.dto';
-import { AuthTokensResponse } from '@juice11-micro/contracts';
-import { Role, User } from '../user/user.entity';
-// import { TokenService } from '../token/token.service';
+import { LoginDto } from './dto/login.dto';
+import { Role } from '../user/user.entity';
+import { User } from '../user/user.entity';
 
 
 @Injectable()
 export class AuthService {
   constructor(
-    private userService: UserService,
-    private jwtService: JwtService,
-    // private tokenService: TokenService,
-  ) {}
+    private readonly userService: UserService,
+    private readonly tokenService: TokenService,
+  ) { }
 
-  async validateUser(email: string, pass: string): Promise<User| null> {
+  async validateUser(email: string, pass: string): Promise<User | null> {
     const user = await this.userService.findByEmail(email);
     if (!user || !user.password) return null;
     const pwMatches = await bcrypt.compare(pass, user.password);
@@ -26,14 +28,13 @@ export class AuthService {
     return null;
   }
 
-  async register(dto: RegisterDto): Promise<AuthTokensResponse> {
+  async register(dto: RegisterDto): Promise<AuthTokens> {
     const candidate = await this.userService.findByEmail(dto.email);
     if (candidate) {
-      throw new ConflictException('User with this email already exists');
+      throw new RpcException({ code: 6, message: 'User with this email already exists' }); // ALREADY_EXISTS
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
-
     const user = await this.userService.create({
       name: dto.name,
       email: dto.email,
@@ -41,47 +42,50 @@ export class AuthService {
       role: Role.User,
     });
 
-    return this.getTokensAndSave(user.id, user.email, user.role);
+    return this.tokenService.generateAndSaveTokens(user.id, user.email, user.role);
   }
 
-  async login(user: {id: string, email: string, role: Role}): Promise<AuthTokensResponse> {
-    return this.getTokensAndSave(user.id, user.email, user.role);
-  }
-
-  async refreshTokens(userId: string, refreshToken: string): Promise<AuthTokensResponse> {
-    const user = await this.userService.findById(userId);
-    if (!user || !user.password ) {
-      throw new ForbiddenException('Access Denied');
+  async login(dto: LoginDto): Promise<AuthTokens> {
+    const user = await this.userService.getByEmail(dto.email);
+    if (!user.password) throw new RpcException({ code: 16, message: 'User not found' }); // NOT_FOUND
+    const pwMatches = await bcrypt.compare(dto.password, user.password);
+    if (!user || !pwMatches) {
+      throw new RpcException({ code: 16, message: 'Invalid credentials' }); // UNAUTHENTICATED
     }
 
-    // make sure password is correct
-    const pwMatches = await bcrypt.compare(refreshToken, user.password);
-    if (!pwMatches) {
-      throw new ForbiddenException('Access Denied / Invalid Token');
-    }
-
-    // Выпускаем новые токены (Rotated Tokens)
-    return this.getTokensAndSave(user.id, user.email, user.role);
+    // HACK: drop all user tokens on login
+    await this.tokenService.deleteByUser(user.id);
+    const tokens = await this.tokenService.generateAndSaveTokens(user.id, user.email, user.role);
+    return tokens;
   }
 
-  // Хелпер: генерация токенов и запись хэша в БД
-  private async getTokensAndSave(userId: string, email: string, role: string): Promise<AuthTokensResponse> {
-    const payload = { sub: userId, email, role };
+  async refreshTokens(refreshToken: string): Promise<AuthTokens> {
+    try {
+      const payload = await this.tokenService.verifyToken(refreshToken);
+      const user = await this.userService.findById(payload.sub);
+      if (!user) {
+        throw new RpcException({ code: 16, message: 'User not found' });
+      }
 
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, {
-        secret: process.env.JWT_ACCESS_SECRET || 'SUPER_SECRET_KEY',
-        expiresIn: '15m',
-      }),
-      this.jwtService.signAsync(payload, {
-        secret: process.env.JWT_REFRESH_SECRET || 'SUPER_REFRESH_KEY',
-        expiresIn: '7d',
-      }),
-    ]);
+      return await this.tokenService.refreshTokens(
+        payload.tokenId!,
+        refreshToken,
+        user.id,
+        user.email,
+        user.role
+      );
+    } catch (error) {
+      if (error instanceof RpcException) throw error;
+      throw new RpcException({ code: 16, message: 'Refresh token invalid, expired or reused' });
+    }
+  }
 
-    // const hashedRt = await bcrypt.hash(refreshToken, 10);
-    // await this.tokenService.updateRefreshToken(userId, hashedRt);
+  async logout(refreshToken: string): Promise<void> {
+    const payload = await this.tokenService.verifyToken(refreshToken);
 
-    return { accessToken: accessToken, refreshToken: refreshToken };
+    if (payload.tokenId) {
+      await this.tokenService.delete(payload.tokenId);
+      console.log('found and deleted token');
+    }
   }
 }

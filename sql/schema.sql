@@ -48,11 +48,13 @@ CREATE TABLE "pending_contact_changes" (
 CREATE TABLE "tokens" (
     "id" TEXT DEFAULT gen_random_uuid()::TEXT NOT NULL,
     "token_hash" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
     "created_at" TIMESTAMP (3) NOT NULL DEFAULT current_timestamp,
     "updated_at" TIMESTAMP (3) NOT NULL DEFAULT current_timestamp,
 
     CONSTRAINT "tokens_pkey" PRIMARY KEY ("id"),
-    CONSTRAINT "tokens_id_key" UNIQUE ("token_hash", "id")
+    CONSTRAINT "tokens_id_key" UNIQUE ("token_hash", "id"),
+    CONSTRAINT "tokens_users_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 
