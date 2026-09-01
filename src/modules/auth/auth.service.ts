@@ -68,11 +68,9 @@ export class AuthService {
       }
 
       return await this.tokenService.refreshTokens(
+        payload,
         payload.tokenId!,
         refreshToken,
-        user.id,
-        user.email,
-        user.role
       );
     } catch (error) {
       if (error instanceof RpcException) throw error;

@@ -14,19 +14,25 @@ export class TokenService {
     private configService: MyConfigService,
   ) { }
 
+  async hashToken(token: string): Promise<string> {
+    const hashedRt = await bcrypt.hash(token, 10);
+    return hashedRt;
+  }
+
   async generateAndSaveTokens(userId: string, email: string, role: string): Promise<AuthTokens> {
 
     const token = await this.tokenRepo.create(userId, '');
 
     const { accessToken, refreshToken } = await this.generateTokens(userId, email, role, token.id);
 
-    const hashedRt = await bcrypt.hash(refreshToken, 10);
+    const hashedRt = await this.hashToken(refreshToken);
+
     await this.tokenRepo.update(token.id, hashedRt);
 
     return { accessToken: accessToken, refreshToken: refreshToken };
   }
 
-  async generateTokens(userId: string, email: string, role: string, tokenId: string): Promise<AuthTokens> {
+  async generateTokens(userId: string, email: string, role: string, tokenId?: string): Promise<AuthTokens> {
 
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -55,9 +61,9 @@ export class TokenService {
     });
     return payload;
   }
-
-  async refreshTokens(tokenId: string, refreshToken: string, userId: string, email: string, role: string): Promise<AuthTokens> {
+  async refreshTokens(payload: JwtPayload, tokenId: string, refreshToken: string): Promise<AuthTokens> {
     const session = await this.tokenRepo.findById(tokenId);
+    const { sub: userId, email, role } = payload;
 
     if (!session || !session.tokenHash) {
       throw new ForbiddenException('Access Denied / Invalid Session');
@@ -72,11 +78,13 @@ export class TokenService {
     return this.generateAndSaveTokens(userId, email, role);
   }
 
-  async delete(tokenId: string): Promise<void> {
+  async delete(tokenId: string): Promise<boolean> {
     await this.tokenRepo.delete(tokenId);
+    return true;
   }
 
-  async deleteByUser(userId: string): Promise<void> {
+  async deleteByUser(userId: string): Promise<boolean> {
     await this.tokenRepo.deleteByUser(userId);
+    return true;
   }
 }

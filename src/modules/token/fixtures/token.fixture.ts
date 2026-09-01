@@ -2,6 +2,7 @@ import {
   TokenMapper,
   DbToken,
 } from '../../../infrastructure/token/token.mapper';
+import { AuthTokens } from '../interfaces/token.interface';
 import { TokenProps } from '../token.entity';
 import { Token } from '../token.entity';
 
@@ -40,6 +41,8 @@ export const TokenFixtures = {
     ...baseDbToken,
     ...override,
   }),
+
+  tokens: (): AuthTokens => ({accessToken: 'accessToken', refreshToken: 'refreshToken'}),
 
   // Generates an array of raw database objects
   rawArray: (count = 2): DbToken[] =>

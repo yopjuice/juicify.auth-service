@@ -16,8 +16,8 @@ export class TokenRepo {
     private readonly db: DatabaseProvider,
   ) { }
 
-  async findByUser(): Promise<Token[]> {
-    const rows = await this.db.run(tokenFindByUser);
+  async findByUser(userId: string): Promise<Token[]> {
+    const rows = await this.db.run(tokenFindByUser, {userId});
     return rows.map((row) => TokenMapper.toDomain(row));
   }
 
@@ -37,12 +37,6 @@ export class TokenRepo {
 
   // DELETE
   async delete(id: string): Promise<boolean> {
-    const existingToken = await this.findById(id);
-
-    if (!existingToken) {
-      throw new EntityNotFoundError('token');
-    }
-
     await this.db.runOne(tokenDelete, { id })
     return true;
   }
