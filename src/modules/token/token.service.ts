@@ -1,10 +1,11 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AuthTokens } from './interfaces/token.interface';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import * as bcrypt from 'bcrypt';
 import { TokenRepo } from '../../infrastructure/token/token.repo';
 import { MyConfigService } from '../../config/config.service';
+import { InvalidCredentialsError, ValidationError } from '../../shared/errors/domain-errors';
 
 @Injectable()
 export class TokenService {
@@ -56,22 +57,26 @@ export class TokenService {
   }
 
   async verifyToken(token: string): Promise<JwtPayload> {
-    const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
-      secret: this.configService.get('jwt.refreshSecret'),
-    });
-    return payload;
+    try {
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
+        secret: this.configService.get('jwt.refreshSecret'),
+      });
+      return payload;
+    } catch (e) {
+      throw new ValidationError('Invalid refresh token')
+    }
   }
   async refreshTokens(payload: JwtPayload, tokenId: string, refreshToken: string): Promise<AuthTokens> {
     const session = await this.tokenRepo.findById(tokenId);
     const { sub: userId, email, role } = payload;
 
     if (!session || !session.tokenHash) {
-      throw new ForbiddenException('Access Denied / Invalid Session');
+      throw new InvalidCredentialsError('Token not found or revoken')
     }
 
     const rtMatches = await bcrypt.compare(refreshToken, session.tokenHash);
     if (!rtMatches) {
-      throw new ForbiddenException('Access Denied / Invalid Token');
+      throw new InvalidCredentialsError('Token not found or revoken')
     }
 
     await this.tokenRepo.delete(tokenId);

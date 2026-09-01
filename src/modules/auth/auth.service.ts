@@ -1,18 +1,20 @@
-import { RpcException } from '@nestjs/microservices';
 import { UserService } from '../user/user.service';
 import { TokenService } from '../token/token.service';
-import { JwtPayload } from './interfaces/jwt-payload.interface';
 import * as bcrypt from 'bcrypt';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { AuthTokens } from '../token/interfaces/token.interface';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Role } from '../user/user.entity';
 import { User } from '../user/user.entity';
+import { EntityAlreadyExistsError, InvalidCredentialsError } from '../../shared/errors/domain-errors';
 
 
 @Injectable()
 export class AuthService {
+
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly userService: UserService,
     private readonly tokenService: TokenService,
@@ -31,7 +33,7 @@ export class AuthService {
   async register(dto: RegisterDto): Promise<AuthTokens> {
     const candidate = await this.userService.findByEmail(dto.email);
     if (candidate) {
-      throw new RpcException({ code: 6, message: 'User with this email already exists' }); // ALREADY_EXISTS
+      throw new EntityAlreadyExistsError('user');
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
@@ -46,11 +48,11 @@ export class AuthService {
   }
 
   async login(dto: LoginDto): Promise<AuthTokens> {
-    const user = await this.userService.getByEmail(dto.email);
-    if (!user.password) throw new RpcException({ code: 16, message: 'User not found' }); // NOT_FOUND
+    const user = await this.userService.findByEmail(dto.email);
+    if (!user || !user.password) throw new InvalidCredentialsError();
     const pwMatches = await bcrypt.compare(dto.password, user.password);
-    if (!user || !pwMatches) {
-      throw new RpcException({ code: 16, message: 'Invalid credentials' }); // UNAUTHENTICATED
+    if (!pwMatches) {
+      throw new InvalidCredentialsError();
     }
 
     // HACK: drop all user tokens on login
@@ -60,22 +62,17 @@ export class AuthService {
   }
 
   async refreshTokens(refreshToken: string): Promise<AuthTokens> {
-    try {
-      const payload = await this.tokenService.verifyToken(refreshToken);
-      const user = await this.userService.findById(payload.sub);
-      if (!user) {
-        throw new RpcException({ code: 16, message: 'User not found' });
-      }
-
-      return await this.tokenService.refreshTokens(
-        payload,
-        payload.tokenId!,
-        refreshToken,
-      );
-    } catch (error) {
-      if (error instanceof RpcException) throw error;
-      throw new RpcException({ code: 16, message: 'Refresh token invalid, expired or reused' });
+    const payload = await this.tokenService.verifyToken(refreshToken);
+    const user = await this.userService.findById(payload.sub);
+    if (!user) {
+      throw new InvalidCredentialsError();
     }
+
+    return await this.tokenService.refreshTokens(
+      payload,
+      payload.tokenId!,
+      refreshToken,
+    );
   }
 
   async logout(refreshToken: string): Promise<void> {
@@ -83,7 +80,7 @@ export class AuthService {
 
     if (payload.tokenId) {
       await this.tokenService.delete(payload.tokenId);
-      console.log('found and deleted token');
+      this.logger.log('Found and deleted token');
     }
   }
 }

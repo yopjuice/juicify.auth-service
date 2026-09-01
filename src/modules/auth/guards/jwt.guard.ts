@@ -1,12 +1,11 @@
 import { RpcException } from '@nestjs/microservices';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { Metadata } from '@grpc/grpc-js';
-import { JwtPayload } from '../interfaces/jwt-payload.interface';
+import { TokenService } from '../../token/token.service';
 
 @Injectable()
 export class GrpcJwtGuard implements CanActivate {
-  constructor(private readonly jwtService: JwtService) { }
+  constructor(private readonly tokenService: TokenService) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const rpcContext = context.switchToRpc();
@@ -20,9 +19,7 @@ export class GrpcJwtGuard implements CanActivate {
     const token = authHeader.split(' ')[1];
 
     try {
-      const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
-        secret: process.env.JWT_ACCESS_SECRET || 'SUPER_SECRET_KEY',
-      });
+      const payload = this.tokenService.verifyToken(token);
 
       const args = rpcContext.getContext();
       if (args) {
