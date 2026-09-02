@@ -11,5 +11,5 @@ export class JwtValidator {
   JWT_REFRESH_SECRET: string;
 
   @IsString()
-  JWT_REGRESH_EXPIRES_IN: string;
+  JWT_REFRESH_EXPIRES_IN: string;
 }
