@@ -10,6 +10,6 @@ export const jwtEnv = registerAs<JwtConfig>('jwt', () => {
     accessSecret: env.JWT_ACCESS_SECRET,
     accessExpiresIn: env.JWT_ACCESS_EXPIRES_IN,
     refreshSecret: env.JWT_REFRESH_SECRET,
-    refreshExpiresIn: env.JWT_REGRESH_EXPIRES_IN,
+    refreshExpiresIn: env.JWT_REFRESH_EXPIRES_IN,
   };
 });
