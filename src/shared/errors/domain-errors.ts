@@ -8,6 +8,9 @@ export abstract class DomainError extends Error {
     super(message);
     this.name = this.constructor.name;
 
+    // fixes bugs with Error extention
+    Object.setPrototypeOf(this, new.target.prototype);
+
     this.code = this.constructor.name
       .replace(/Error$/, '')
       .replace(/([A-Z])/g, '_$1')
@@ -64,4 +67,10 @@ export class ResourceExhaustedError extends DomainError {
   }
 }
 
-export class ValidationError extends DomainError {}
+export class ValidationError extends DomainError { }
+
+export class InvalidCredentialsError extends DomainError {
+  constructor(message = 'Invalid credentials') {
+    super(message);
+  }
+}

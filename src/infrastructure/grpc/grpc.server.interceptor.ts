@@ -3,7 +3,6 @@ import { Observable, tap } from 'rxjs';
 import { Metadata } from '@grpc/grpc-js';
 import { randomUUID } from 'node:crypto';
 import { TraceContextStorage } from '../logger/logger.storage';
-import { sanitizeData } from '../../shared/utils/sanitize-data';
 
 @Injectable()
 export class GrpcServerInterceptor implements NestInterceptor {
