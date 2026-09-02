@@ -1,7 +1,6 @@
 import { Controller, UseGuards } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { AuthService } from './auth.service';
-import { GrpcJwtGuard } from './guards/jwt.guard';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto'
 import { AuthTokensResponse, GetMyInfoResponse } from '@juice11-micro/contracts';
@@ -9,6 +8,8 @@ import {CurrentUser} from './decorators/user.decorator'
 import type { JwtPayload } from './interfaces/jwt-payload.interface';
 import { RefreshDto } from './dto/refresh.dto';
 import { LogoutDto } from './dto/logout.dto';
+import { UseRoles } from './decorators/use-roles.decorator';
+import { Role } from '../user/user.entity';
 
 
 @Controller()
@@ -35,7 +36,7 @@ export class AuthController {
     return this.authService.logout(data.refreshToken);
   }
 
-  @UseGuards(GrpcJwtGuard)
+  @UseRoles([Role.Admin])
   @GrpcMethod('AuthService', 'GetMyInfo')
   async getProfile(data: undefined, @CurrentUser() user: JwtPayload): Promise<GetMyInfoResponse> {
 

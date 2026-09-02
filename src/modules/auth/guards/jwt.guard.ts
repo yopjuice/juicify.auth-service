@@ -19,7 +19,7 @@ export class GrpcJwtGuard implements CanActivate {
     const token = authHeader.split(' ')[1];
 
     try {
-      const payload = this.tokenService.verifyAccessToken(token);
+      const payload = await this.tokenService.verifyAccessToken(token);
 
       const args = rpcContext.getContext();
       if (args) {
