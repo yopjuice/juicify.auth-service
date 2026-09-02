@@ -66,12 +66,12 @@ describe('TokenService', () => {
     });
   });
 
-  describe('verifyToken', () => {
+  describe('verifyRefreshToken', () => {
     it('should return payload', async () => {
       const user = UserFixtures.entity();
       const { refreshToken: token } = await service.generateTokens(user.id, user.email, user.role);
 
-      const result = await service.verifyToken(token);
+      const result = await service.verifyRefreshToken(token);
 
       expect(result).toHaveProperty('sub');
       expect(result).toHaveProperty('email');

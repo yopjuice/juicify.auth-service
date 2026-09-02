@@ -22,6 +22,7 @@ import { UserFixtures } from '../src/modules/user/fixtures/user.fixture';
 import { TokenFixtures } from '../src/modules/token/fixtures/token.fixture';
 
 // TODO: add separate database for testing
+// TODO: add more scenarios
 describe('Auth gRPC (e2e)', () => {
   let app: INestMicroservice;
   let wrapper: AuthGrpc;

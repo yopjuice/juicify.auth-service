@@ -1,7 +1,7 @@
-import { RpcException } from '@nestjs/microservices';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Metadata } from '@grpc/grpc-js';
 import { TokenService } from '../../token/token.service';
+import { UnauthenticatedError } from '../../../shared/errors/domain-errors';
 
 @Injectable()
 export class GrpcJwtGuard implements CanActivate {
@@ -13,13 +13,13 @@ export class GrpcJwtGuard implements CanActivate {
     const authHeader = metadata.get('authorization')[0] as string;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new RpcException({ code: 16, message: 'Missing or invalid token' });
+      throw new UnauthenticatedError()
     }
 
     const token = authHeader.split(' ')[1];
 
     try {
-      const payload = this.tokenService.verifyToken(token);
+      const payload = this.tokenService.verifyAccessToken(token);
 
       const args = rpcContext.getContext();
       if (args) {
@@ -28,7 +28,7 @@ export class GrpcJwtGuard implements CanActivate {
 
       return true;
     } catch {
-      throw new RpcException({ code: 16, message: 'Token invalid or expired' });
+      throw new UnauthenticatedError();
     }
   }
 }

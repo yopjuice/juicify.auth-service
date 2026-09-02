@@ -62,7 +62,7 @@ export class AuthService {
   }
 
   async refreshTokens(refreshToken: string): Promise<AuthTokens> {
-    const payload = await this.tokenService.verifyToken(refreshToken);
+    const payload = await this.tokenService.verifyRefreshToken(refreshToken);
     const user = await this.userService.findById(payload.sub);
     if (!user) {
       throw new InvalidCredentialsError();
@@ -76,7 +76,7 @@ export class AuthService {
   }
 
   async logout(refreshToken: string): Promise<void> {
-    const payload = await this.tokenService.verifyToken(refreshToken);
+    const payload = await this.tokenService.verifyRefreshToken(refreshToken);
 
     if (payload.tokenId) {
       await this.tokenService.delete(payload.tokenId);

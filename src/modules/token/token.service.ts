@@ -56,16 +56,29 @@ export class TokenService {
     return { accessToken: accessToken, refreshToken: refreshToken };
   }
 
-  async verifyToken(token: string): Promise<JwtPayload> {
+  async verifyRefreshToken(token: string): Promise<JwtPayload> {
     try {
       const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
         secret: this.configService.get('jwt.refreshSecret'),
       });
       return payload;
     } catch (e) {
-      throw new ValidationError('Invalid refresh token')
+      throw new InvalidCredentialsError('Invalid refresh token')
     }
   }
+  
+  async verifyAccessToken(token: string): Promise<JwtPayload> {
+    try {
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
+        secret: this.configService.get('jwt.accessSecret'),
+      });
+      return payload;
+    } catch (e) {
+      throw new InvalidCredentialsError('Invalid access token')
+    }
+  }
+
+
   async refreshTokens(payload: JwtPayload, tokenId: string, refreshToken: string): Promise<AuthTokens> {
     const session = await this.tokenRepo.findById(tokenId);
     const { sub: userId, email, role } = payload;
