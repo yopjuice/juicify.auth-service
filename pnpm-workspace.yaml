@@ -10,6 +10,7 @@ allowBuilds:
   '@prisma/engines': true
   '@scarf/scarf': true
   '@swc/core': true
+  bcrypt: true
   prisma: true
   protobufjs: true
   unrs-resolver: true
@@ -18,3 +19,4 @@ minimumReleaseAgeExclude:
   - '@juice11-micro/contracts@1.0.0'
 linkWorkspacePackages: true
 ignoreWorkspaceCycles: true
+ignoreWorkspaceRootCheck: true
