@@ -8,14 +8,18 @@ jobs:
   deploy:
     runs-on: local-ubuntu # local runner
     env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }} 
-        DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
-        DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
-        DATABASE_USER: ${{ secrets.DATABASE_USER }}
-        DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
-        DATABASE_DB: ${{ secrets.DATABASE_DB }}
-        GRPC_HOST: ${{ secrets.GRPC_HOST }}
-        GRPC_PORT: ${{ secrets.GRPC_PORT }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+      DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+      DATABASE_USER: ${{ secrets.DATABASE_USER }}
+      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      DATABASE_DB: ${{ secrets.DATABASE_DB }}
+      GRPC_HOST: ${{ secrets.GRPC_HOST }}
+      GRPC_PORT: ${{ secrets.GRPC_PORT }}
+      JWT_ACCESS_SECRET: ${{ secrets.JWT_ACCESS_SECRET }}
+      JWT_ACCESS_EXPIRES_IN: ${{ secrets.JWT_ACCESS_EXPIRES_IN }}
+      JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+      JWT_REFRESH_EXPIRES_IN: ${{ secrets.JWT_REFRESH_EXPIRES_IN }}
 
     steps:
       - name: Checkout repository
@@ -61,5 +65,5 @@ jobs:
       # Start application with pm2
       - name: Start/Restart Application
         run: |
-         cd ~/juicify-deploy/auth
-         pm2 restart "juicify-auth" --update-env || pm2 start dist/src/main.js --name "juicify-auth"
+          cd ~/juicify-deploy/auth
+          pm2 restart "juicify-auth" --update-env || pm2 start dist/src/main.js --name "juicify-auth"
