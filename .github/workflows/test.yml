@@ -10,6 +10,7 @@ jobs:
   test:
     if: github.event.pull_request.draft == false
     runs-on: local-ubuntu
+    environment: test
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
@@ -47,7 +48,7 @@ jobs:
 
       # Generate /generated folder with SQL queries
       - name: Generate SQL Types
-        run: pnpm run db:types
+        run: pnpm run db:types:test
 
       # Compile code
       - name: Build application

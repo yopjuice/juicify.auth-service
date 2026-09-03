@@ -20,6 +20,7 @@ import { UserRepo } from '../src/infrastructure/user/user.repo';
 import { AuthFixtures } from '../src/modules/auth/fixtures/auth.fixtures';
 import { UserFixtures } from '../src/modules/user/fixtures/user.fixture';
 import { TokenFixtures } from '../src/modules/token/fixtures/token.fixture';
+import getFreePort from 'get-port';
 
 // TODO: add separate database for testing
 // TODO: add more scenarios
@@ -32,6 +33,11 @@ describe('Auth gRPC (e2e)', () => {
   let userRepo: UserRepo;
 
   beforeAll(async () => {
+    
+    // use any free port for testing
+    const testPort = await getFreePort();
+    process.env.GRPC_PORT = testPort.toString();
+
     // Create testing module with all dependencies
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -119,7 +125,7 @@ describe('Auth gRPC (e2e)', () => {
     });
   });
 
-  describe('Invalid credentials errors', () => {
+  describe('Unauthenticated errors', () => {
     it.each([
       {
         method: 'login',
@@ -134,11 +140,27 @@ describe('Auth gRPC (e2e)', () => {
           return client.refreshTokens({ refreshToken: TokenFixtures.tokens().refreshToken })
         }
       },
+      {
+        method: 'refresh',
+        field: 'refreshToken',
+        call: () => {
+          const dto = AuthFixtures.refreshDto({ refreshToken: 'invalid-token' });
+          return client.refreshTokens({ ...dto });
+        }
+      },
+      {
+        method: 'logout',
+        field: 'refreshToken',
+        call: () => {
+          const dto = AuthFixtures.refreshDto({ refreshToken: 'invalid-token' });
+          return client.logout({ ...dto });
+        }
+      },
     ])(
       'should return gRPC Unauthenticated error when $method target does not exist',
       async ({ call }) => {
         await expect(call()).rejects.toMatchObject({
-          code: 13,
+          code: 16,
           details: expect.stringContaining('Invalid'),
         });
       },
@@ -163,27 +185,11 @@ describe('Auth gRPC (e2e)', () => {
           return client.login({ ...dto });
         }
       },
-      {
-        method: 'refresh',
-        field: 'token',
-        call: () => {
-          const dto = AuthFixtures.refreshDto({ refreshToken: 'invalid-token' });
-          return client.refreshTokens({ ...dto });
-        }
-      },
-      {
-        method: 'logout',
-        field: 'token',
-        call: () => {
-          const dto = AuthFixtures.refreshDto({ refreshToken: 'invalid-token' });
-          return client.logout({ ...dto });
-        }
-      },
     ])(
       'should return gRPC INVALID_ARGUMENT error when $method params are invalid',
       async ({ call, field }) => {
         await expect(call()).rejects.toMatchObject({
-          code: 13,
+          code: 3,
           details: expect.stringContaining(field),
         });
       },

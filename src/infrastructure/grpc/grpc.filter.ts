@@ -36,6 +36,10 @@ export class GlobalGrpcExceptionFilter implements RpcExceptionFilter {
           code = status.UNAUTHENTICATED;
         else if (domainErr instanceof errors.PermissionDeniedError)
           code = status.PERMISSION_DENIED;
+        else if (domainErr instanceof errors.UnauthenticatedError ||
+          domainErr instanceof errors.InvalidCredentialsError)
+          code = status.UNAUTHENTICATED;
+
         details = domainErr.message;
         break;
       }
