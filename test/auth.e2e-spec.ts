@@ -125,7 +125,7 @@ describe('Auth gRPC (e2e)', () => {
     });
   });
 
-  describe('Invalid credentials errors', () => {
+  describe('Unauthenticated errors', () => {
     it.each([
       {
         method: 'login',
@@ -140,11 +140,27 @@ describe('Auth gRPC (e2e)', () => {
           return client.refreshTokens({ refreshToken: TokenFixtures.tokens().refreshToken })
         }
       },
+      {
+        method: 'refresh',
+        field: 'refreshToken',
+        call: () => {
+          const dto = AuthFixtures.refreshDto({ refreshToken: 'invalid-token' });
+          return client.refreshTokens({ ...dto });
+        }
+      },
+      {
+        method: 'logout',
+        field: 'refreshToken',
+        call: () => {
+          const dto = AuthFixtures.refreshDto({ refreshToken: 'invalid-token' });
+          return client.logout({ ...dto });
+        }
+      },
     ])(
       'should return gRPC Unauthenticated error when $method target does not exist',
       async ({ call }) => {
         await expect(call()).rejects.toMatchObject({
-          code: 13,
+          code: 16,
           details: expect.stringContaining('Invalid'),
         });
       },
@@ -169,27 +185,11 @@ describe('Auth gRPC (e2e)', () => {
           return client.login({ ...dto });
         }
       },
-      {
-        method: 'refresh',
-        field: 'token',
-        call: () => {
-          const dto = AuthFixtures.refreshDto({ refreshToken: 'invalid-token' });
-          return client.refreshTokens({ ...dto });
-        }
-      },
-      {
-        method: 'logout',
-        field: 'token',
-        call: () => {
-          const dto = AuthFixtures.refreshDto({ refreshToken: 'invalid-token' });
-          return client.logout({ ...dto });
-        }
-      },
     ])(
       'should return gRPC INVALID_ARGUMENT error when $method params are invalid',
       async ({ call, field }) => {
         await expect(call()).rejects.toMatchObject({
-          code: 13,
+          code: 3,
           details: expect.stringContaining(field),
         });
       },

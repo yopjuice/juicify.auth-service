@@ -2,12 +2,15 @@ import { LoginDto } from "../dto/login.dto";
 import { LogoutDto } from "../dto/logout.dto";
 import { RefreshDto } from "../dto/refresh.dto";
 import { RegisterDto } from "../dto/register.dto";
+import { randomUUID} from 'node:crypto'
+
+const uuid =  randomUUID()
 
 const dtoData = {
   name: 'test-name',
   password: 'test-password',
   email: 'test@email.com',
-  refreshToken: 'sdfjfaksdf;asdflsaj',
+  refreshToken: uuid,
 }
 
 export const AuthFixtures = {

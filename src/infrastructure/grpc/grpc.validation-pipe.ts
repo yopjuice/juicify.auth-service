@@ -1,9 +1,8 @@
 import { PipeTransform, Injectable, ArgumentMetadata } from '@nestjs/common';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { RpcException } from '@nestjs/microservices';
-import * as grpc from '@grpc/grpc-js';
 import {Logger} from '@nestjs/common';
+import { InvalidArgumentError } from '../../shared/errors/domain-errors';
 
 @Injectable()
 export class GrpcValidationPipe implements PipeTransform<any> {
@@ -27,11 +26,8 @@ export class GrpcValidationPipe implements PipeTransform<any> {
         .join('; ');
 
       this.logger.log(errorMessages);
-      // Throw a proper gRPC RpcException with an INVALID_ARGUMENT code
-      throw new RpcException({
-        code: grpc.status.INVALID_ARGUMENT,
-        message: errorMessages,
-      });
+
+      throw new InvalidArgumentError(errorMessages);
     }
     return value;
   }
