@@ -18,17 +18,24 @@
     "test:cov": "vitest run --coverage",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
     "test:e2e": "vitest run --config ./test/vitest-e2e.config.mts --passWithNoTests --reporter=tree",
+    "test:unit": "node --import tsx --test src/**/*.unit.test.ts",
+    "test:integration": "node --import tsx --test src/**/*.integration.test.ts",
     "start:cluster": "tsx ./src/app/cluster/multicore.js",
     "start:threads": "tsx ./src/app/threads/producer.js",
     "start:pool": "tsx ./src/app/threads/pool.ts",
     "init-db": "tsx ./src/scripts/init-db.ts",
+
     "_db:diff:run": "psqldef -U $DATABASE_USER -h $DATABASE_HOST -W $DATABASE_PASSWORD $DATABASE_DB --dry-run < sql/schema.sql",
-    "db:diff": "dotenv -- pnpm run _db:diff:run",
     "_db:apply:run": "psqldef -U $DATABASE_USER -h $DATABASE_HOST -W $DATABASE_PASSWORD $DATABASE_DB < sql/schema.sql",
-    "db:apply": "dotenv -- pnpm run _db:apply:run",
-    "db:types": "pnpm exec dotenv -e .env -- pnpm exec pgtyped -c pgtyped.config.json",
-    "test:unit": "node --import tsx --test src/**/*.unit.test.ts",
-    "test:integration": "node --import tsx --test src/**/*.integration.test.ts",
+
+    "db:diff": "dotenv -e .env -- pnpm run _db:diff:run",
+    "db:apply": "dotenv -e .env -- pnpm run _db:apply:run",
+    "db:types": "dotenv -e .env -- pnpm exec pgtyped -c pgtyped.config.json",
+
+    "db:diff:test": "dotenv -e .env.test -- pnpm run _db:diff:run",
+    "db:apply:test": "dotenv -e .env.test -- pnpm run _db:apply:run",
+    "db:types:test": "dotenv -e .env.test -- pnpm exec pgtyped -c pgtyped.config.json",
+
     "dry-ci": "act pull_request -P local-ubuntu=-self-hosted",
     "dry-cd": "act -P local-ubuntu=-self-hosted"
   },
@@ -73,6 +80,7 @@
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
+    "get-port": "^7.2.0",
     "globals": "^16.0.0",
     "pgtyped": "^0.0.1",
     "pino-pretty": "^13.1.3",

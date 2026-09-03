@@ -20,6 +20,7 @@ import { UserRepo } from '../src/infrastructure/user/user.repo';
 import { AuthFixtures } from '../src/modules/auth/fixtures/auth.fixtures';
 import { UserFixtures } from '../src/modules/user/fixtures/user.fixture';
 import { TokenFixtures } from '../src/modules/token/fixtures/token.fixture';
+import getFreePort from 'get-port';
 
 // TODO: add separate database for testing
 // TODO: add more scenarios
@@ -32,6 +33,11 @@ describe('Auth gRPC (e2e)', () => {
   let userRepo: UserRepo;
 
   beforeAll(async () => {
+    
+    // use any free port for testing
+    const testPort = await getFreePort();
+    process.env.GRPC_PORT = testPort.toString();
+
     // Create testing module with all dependencies
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
